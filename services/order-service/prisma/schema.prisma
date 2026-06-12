@@ -1,0 +1,18 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("ORDER_DB_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Order {
+  id         String   @id @default(uuid())
+  customerId String
+  status     String   @default("pending")
+  items      Json
+  totalAmount Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
