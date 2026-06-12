@@ -10,7 +10,7 @@ Event-driven microservices e-commerce platform built with Node.js, Go, Python, a
 - **Broker:** RabbitMQ
 - **Databases:** PostgreSQL (per service)
 - **Cache:** Redis
-- **Orchestration:** Docker Compose → Kubernetes (planned)
+- **Orchestration:** Docker Compose → Kubernetes
 
 ## Quick Start
 
@@ -23,7 +23,3 @@ docker compose up -d
 | Frontend | http://localhost:4000 |
 | Products API | http://localhost:3000/api/products |
 | RabbitMQ UI | http://localhost:15672 (guest/guest) |
-
-## Status
-
-Phase 1 complete — 7 microservices running, product catalog with 30 seeded products.

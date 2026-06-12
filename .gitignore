@@ -7,3 +7,10 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Internal planning
+PLAN.md
+
+# OS files
+Thumbs.db
+.DS_Store

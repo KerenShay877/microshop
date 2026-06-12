@@ -21,29 +21,43 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="text-center py-16">
-      <h1 className="text-4xl font-bold mb-4">Welcome to MicroShop</h1>
-      <p className="text-lg text-gray-600 mb-8">
-        An event-driven microservices e-commerce platform
-      </p>
-      <div className="flex justify-center gap-4 mb-12">
-        <a
-          href="/products"
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
-        >
-          Browse Products
-        </a>
+    <div className="bg-grid">
+      <div className="text-center py-20">
+        <h1 className="text-5xl md:text-6xl font-bold mb-6">
+          <span className="gradient-text">MicroShop</span>
+        </h1>
+        <p className="text-lg text-slate-400 mb-10 max-w-xl mx-auto">
+          An event-driven microservices e-commerce platform powered by Node.js, Go, Python, and Next.js
+        </p>
+        <div className="flex justify-center gap-4">
+          <a
+            href="/products"
+            className="gradient-btn text-white px-8 py-3 rounded-xl font-medium"
+          >
+            Browse Products
+          </a>
+        </div>
       </div>
 
       {featured.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Featured Products</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {featured.map((p) => (
-              <div key={p.id} className="border rounded-lg p-4 bg-white shadow-sm">
-                <h3 className="font-semibold">{p.name}</h3>
-                <p className="text-gray-500 text-sm">{p.category.name}</p>
-                <p className="text-xl font-bold mt-2">${p.price.toFixed(2)}</p>
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-semibold mb-6 text-center text-slate-300">
+            Featured Products
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {featured.map((p, i) => (
+              <div
+                key={p.id}
+                className="glass-card rounded-2xl p-6 group"
+                style={{ animationDelay: `${i * 100}ms` }}
+              >
+                <div className="w-12 h-12 rounded-xl gradient-btn opacity-80 mb-4 flex items-center justify-center text-white text-lg font-bold">
+                  {p.name.charAt(0)}
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-1">{p.name}</h3>
+                <p className="text-sm text-slate-500 mb-3">{p.category.name}</p>
+                <div className="h-[1px] bg-white/5 mb-3" />
+                <p className="text-2xl font-bold gradient-text">${p.price.toFixed(2)}</p>
               </div>
             ))}
           </div>
