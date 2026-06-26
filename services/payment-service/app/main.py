@@ -1,11 +1,27 @@
+import asyncio
+import logging
 from datetime import datetime, timezone
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 import dotenv
 
-dotenv.load_dotenv()
+from app.database import init_db
+from app.events import connect, start_consumer
 
-app = FastAPI(title="Payment Service")
+dotenv.load_dotenv()
+logging.basicConfig(level=logging.INFO)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    await connect()
+    asyncio.create_task(start_consumer())
+    yield
+
+
+app = FastAPI(title="Payment Service", lifespan=lifespan)
 
 
 @app.get("/health")
