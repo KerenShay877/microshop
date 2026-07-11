@@ -1,9 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import dotenv from "dotenv";
 import { productRoutes } from "./routes/products";
-
-dotenv.config();
 
 const app = Fastify({ logger: true });
 const PORT = parseInt(process.env.PRODUCT_SERVICE_PORT || "3001");

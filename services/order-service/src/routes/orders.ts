@@ -45,7 +45,10 @@ export async function orderRoutes(app: FastifyInstance) {
   });
 
   app.get("/orders", async (req) => {
-    const { customerId } = req.query as { customerId?: string };
+    const { customerId, all } = req.query as { customerId?: string; all?: string };
+    if (all === "true") {
+      return prisma.order.findMany({ orderBy: { createdAt: "desc" } });
+    }
     const where = customerId ? { customerId } : {};
     return prisma.order.findMany({ where, orderBy: { createdAt: "desc" } });
   });

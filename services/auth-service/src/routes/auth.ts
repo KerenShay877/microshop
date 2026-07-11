@@ -30,11 +30,11 @@ export async function authRoutes(app: FastifyInstance) {
       data: { email, name, password: hashed },
     });
 
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 
     reply.status(201).send({
       token,
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
     });
   });
 
@@ -58,11 +58,11 @@ export async function authRoutes(app: FastifyInstance) {
       return;
     }
 
-    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ userId: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 
     reply.send({
       token,
-      user: { id: user.id, email: user.email, name: user.name },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
     });
   });
 
@@ -74,15 +74,31 @@ export async function authRoutes(app: FastifyInstance) {
     }
 
     try {
-      const decoded = jwt.verify(auth.split(" ")[1], JWT_SECRET) as { userId: string };
+      const decoded = jwt.verify(auth.split(" ")[1], JWT_SECRET) as { userId: string; role: string };
       const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
       if (!user) {
         reply.status(404).send({ message: "User not found" });
         return;
       }
-      reply.send({ id: user.id, email: user.email, name: user.name });
+      reply.send({ id: user.id, email: user.email, name: user.name, role: user.role });
     } catch {
       reply.status(403).send({ message: "Invalid or expired token" });
     }
+  });
+
+  app.get("/auth/users/count", async (req, reply) => {
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith("Bearer ")) {
+      reply.status(401).send({ message: "Missing authorization header" });
+      return;
+    }
+    try {
+      jwt.verify(auth.split(" ")[1], JWT_SECRET);
+    } catch {
+      reply.status(403).send({ message: "Invalid or expired token" });
+      return;
+    }
+    const count = await prisma.user.count();
+    reply.send({ count });
   });
 }

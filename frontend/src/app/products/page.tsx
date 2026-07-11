@@ -1,19 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
 
-const API_URL = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:3000";
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-  category: { name: string };
-}
-
-function addToCart(product: Product) {
+function addToCart(product: { id: string; name: string; price: number }) {
   const stored = localStorage.getItem("microshop-cart");
   const items: { productId: string; name: string; price: number; quantity: number }[] = stored ? JSON.parse(stored) : [];
   const existing = items.find((i) => i.productId === product.id);
@@ -27,36 +17,30 @@ function addToCart(product: Product) {
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: products, isLoading: productsLoading } = trpc.product.list.useQuery();
+  const { data: categories } = trpc.category.list.useQuery();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
-  const [categories, setCategories] = useState<string[]>([]);
+  const [cats, setCats] = useState<string[]>([]);
   const [added, setAdded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    fetch(`${API_URL}/api/products`)
-      .then((r) => r.json())
-      .then(setProducts)
-      .finally(() => setLoading(false));
-    fetch(`${API_URL}/api/categories`)
-      .then((r) => r.json())
-      .then((cats) => setCategories(cats.map((c: any) => c.name)));
-  }, []);
+    if (categories) setCats(categories.map((c: any) => c.name));
+  }, [categories]);
 
-  const handleAdd = (product: Product) => {
+  const handleAdd = (product: any) => {
     addToCart(product);
     setAdded((prev) => new Set(prev).add(product.id));
     setTimeout(() => setAdded((prev) => { const next = new Set(prev); next.delete(product.id); return next; }), 1500);
   };
 
-  const filtered = products.filter((p) => {
+  const filtered = (products ?? []).filter((p: any) => {
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
-    const matchCat = !category || p.category.name === category;
+    const matchCat = !category || p.category?.name === category;
     return matchSearch && matchCat;
   });
 
-  if (loading) {
+  if (productsLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full" />
@@ -82,14 +66,14 @@ export default function ProductsPage() {
           className="input-dark rounded-xl px-4 py-3 min-w-[180px]"
         >
           <option value="">All Categories</option>
-          {categories.map((c) => (
+          {cats.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((product) => (
+        {filtered.map((product: any) => (
           <div key={product.id} className="glass-card rounded-2xl p-6">
             <a href={`/products/${product.id}`}>
               <div className="w-10 h-10 rounded-lg gradient-btn opacity-80 mb-3 flex items-center justify-center text-white text-sm font-bold">
@@ -97,7 +81,7 @@ export default function ProductsPage() {
               </div>
               <h2 className="text-lg font-semibold text-white mb-1">{product.name}</h2>
               <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">
-                {product.category.name}
+                {product.category?.name}
               </p>
               <p className="text-sm text-slate-400 mb-4 line-clamp-2">{product.description}</p>
             </a>

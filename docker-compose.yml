@@ -8,7 +8,7 @@ services:
       - "3000:3000"
     environment:
       API_GATEWAY_PORT: 3000
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_SECRET: ${JWT_SECRET}
       PRODUCT_SERVICE_URL: http://product-service:3001
       ORDER_SERVICE_URL: http://order-service:3002
       INVENTORY_SERVICE_URL: http://inventory-service:3003
@@ -20,7 +20,6 @@ services:
       - inventory-service
       - payment-service
       - auth-service
-      - redis
 
   product-service:
     build: ./services/product-service
@@ -93,13 +92,17 @@ services:
     environment:
       AUTH_SERVICE_PORT: 3006
       AUTH_DB_URL: postgresql://postgres:postgres@auth-db:5432/auth
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     depends_on:
       auth-db:
         condition: service_started
 
   frontend:
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
     ports:
       - "4000:4000"
     environment:

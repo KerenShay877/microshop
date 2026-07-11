@@ -1,1 +1,4 @@
-// tRPC will be configured in Phase 4
+import { createTRPCReact } from "@trpc/react-query";
+import type { AppRouter } from "@gateway/trpc/index";
+
+export const trpc = createTRPCReact<AppRouter>();

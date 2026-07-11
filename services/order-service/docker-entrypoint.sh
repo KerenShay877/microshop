@@ -8,7 +8,7 @@ done
 echo "Database ready!"
 
 echo "Running database push..."
-npx prisma db push --accept-data-loss
+bunx prisma db push --accept-data-loss
 
 echo "Starting service..."
-exec node dist/index.js
+exec bun run src/index.ts

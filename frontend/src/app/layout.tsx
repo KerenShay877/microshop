@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { TRPCProvider } from "@/lib/trpc-provider";
 import { Nav } from "@/components/nav";
 
 export const metadata: Metadata = {
@@ -16,12 +17,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-[#0a0e1a] text-slate-200">
-        <AuthProvider>
-          <Nav />
-          <main className="max-w-7xl mx-auto px-6 pt-24 pb-12">
-            {children}
-          </main>
-        </AuthProvider>
+        <TRPCProvider>
+          <AuthProvider>
+            <Nav />
+            <main className="max-w-7xl mx-auto px-6 pt-24 pb-12">
+              {children}
+            </main>
+          </AuthProvider>
+        </TRPCProvider>
       </body>
     </html>
   );

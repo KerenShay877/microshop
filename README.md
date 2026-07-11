@@ -1,32 +1,32 @@
 # microshop
 
-Event-driven microservices e-commerce platform built with Node.js, Go, Python, and Next.js.
+Event-driven microservices e-commerce platform built with Bun, Go, Python, and Next.js.
 
 ## Stack
 
 - **Frontend:** Next.js 14, TypeScript, Tailwind CSS
-- **Gateway:** Node.js, Express (JWT auth)
-- **Services:** Fastify (Node), Chi (Go), FastAPI (Python)
+- **Gateway:** Bun, Express (JWT auth)
+- **Services:** Fastify (Bun), Chi (Go), FastAPI (Python)
 - **Auth:** JWT + bcrypt, Prisma/SQLite
 - **Broker:** RabbitMQ (Saga pattern for order lifecycle)
 - **Databases:** PostgreSQL (per service), SQLite (auth)
-- **Cache:** Redis
 - **Orchestration:** Docker Compose → Kubernetes
+- **Runtime:** Bun for all Node.js services (api-gateway, auth, product, order, notification)
 
 ## Services
 
 | Service | Lang | DB | Status |
 |---|---|---|---|
-| API Gateway | Node/Express | — | ✅ |
-| Auth | Node/Fastify | SQLite | ✅ |
-| Product | Node/Fastify | PostgreSQL | ✅ |
-| Order | Node/Fastify | PostgreSQL | ✅ |
+| API Gateway | Bun/Express | — | ✅ |
+| Auth | Bun/Fastify | SQLite | ✅ |
+| Product | Bun/Fastify | PostgreSQL | ✅ |
+| Order | Bun/Fastify | PostgreSQL | ✅ |
 | Inventory | Go/Chi | PostgreSQL | ✅ |
 | Payment | Python/FastAPI | PostgreSQL | ✅ |
-| Notification | Node/Express/WS | — | ✅ |
+| Notification | Bun/Express/WS | — | ✅ |
 | Frontend | Next.js 14 | — | ✅ |
 
-**14 containers** — all healthy.
+**13 containers** — all healthy.
 
 ## Quick Start
 
@@ -44,10 +44,10 @@ docker compose up -d
 ## Tests
 
 ```bash
-# Unit tests (33 total)
-cd services/auth-service && npx vitest run
-cd services/product-service && npx vitest run
-cd services/order-service && npx vitest run
+# Unit tests (25 total)
+cd services/auth-service && bun test
+cd services/product-service && bun test
+cd services/order-service && bun test
 
 # Integration tests (20 total)
 node tests/system.mjs

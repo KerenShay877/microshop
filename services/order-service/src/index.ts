@@ -1,11 +1,8 @@
 import Fastify from "fastify";
-import dotenv from "dotenv";
 import amqp from "amqplib";
 import { orderRoutes } from "./routes/orders";
 import { connectPublisher } from "./events/publisher";
 import { startConsumer } from "./events/consumer";
-
-dotenv.config();
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://guest:guest@rabbitmq:5672";
 const MAX_RETRIES = 30;

@@ -1,13 +1,7 @@
-FROM node:20-alpine AS builder
+FROM oven/bun:1-alpine
 WORKDIR /app
-COPY package.json tsconfig.json ./
-RUN npm install
+COPY package.json ./
+RUN bun install
 COPY src/ ./src/
-RUN npm run build
-
-FROM node:20-alpine AS runner
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
 EXPOSE 3005
-CMD ["node", "dist/index.js"]
+CMD ["bun", "run", "src/index.ts"]

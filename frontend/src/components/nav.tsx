@@ -19,6 +19,9 @@ export function Nav() {
             <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
           ) : user ? (
             <div className="flex items-center gap-3">
+              {user.role === "admin" && (
+                <a href="/admin" className="text-sm text-amber-400 hover:text-amber-300 font-medium">Admin</a>
+              )}
               <a href="/auth/profile" className="text-sm text-purple-400 hover:text-purple-300">
                 {user.name}
               </a>

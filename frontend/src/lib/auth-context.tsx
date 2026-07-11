@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { trpc } from "@/lib/trpc";
 
 const API_URL = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:3000";
 
@@ -8,6 +9,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  role: string;
 }
 
 interface AuthContextType {
@@ -25,6 +27,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const loginMutation = trpc.auth.login.useMutation();
+  const registerMutation = trpc.auth.register.useMutation();
 
   useEffect(() => {
     const saved = localStorage.getItem("microshop-token");
@@ -45,35 +49,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await fetch(`${API_URL}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || "Login failed");
-    }
-    const { token: t, user: u } = await res.json();
-    localStorage.setItem("microshop-token", t);
-    setToken(t);
-    setUser(u);
+    const result = await loginMutation.mutateAsync({ email, password });
+    localStorage.setItem("microshop-token", result.token);
+    setToken(result.token);
+    setUser(result.user);
   };
 
   const register = async (email: string, password: string, name: string) => {
-    const res = await fetch(`${API_URL}/api/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
-    });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || "Registration failed");
-    }
-    const { token: t, user: u } = await res.json();
-    localStorage.setItem("microshop-token", t);
-    setToken(t);
-    setUser(u);
+    const result = await registerMutation.mutateAsync({ email, password, name });
+    localStorage.setItem("microshop-token", result.token);
+    setToken(result.token);
+    setUser(result.user);
   };
 
   const logout = () => {

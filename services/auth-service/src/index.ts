@@ -1,9 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import dotenv from "dotenv";
 import { authRoutes } from "./routes/auth";
-
-dotenv.config();
 
 const app = Fastify({ logger: true });
 const PORT = parseInt(process.env.AUTH_SERVICE_PORT || "3006");

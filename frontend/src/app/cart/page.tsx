@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-
-const API_URL = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "http://localhost:3000";
+import { trpc } from "@/lib/trpc";
 
 interface CartItem {
   productId: string;
@@ -16,25 +15,17 @@ export default function CartPage() {
   const { token } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [orderResult, setOrderResult] = useState<string | null>(null);
+  const placeOrder = trpc.order.create.useMutation();
 
   useEffect(() => {
     const stored = localStorage.getItem("microshop-cart");
     if (stored) {
-      try {
-        setItems(JSON.parse(stored));
-      } catch {
-        // ignore
-      }
+      try { setItems(JSON.parse(stored)); } catch { /* ignore */ }
     }
-
     const handler = () => {
       const updated = localStorage.getItem("microshop-cart");
       if (updated) {
-        try {
-          setItems(JSON.parse(updated));
-        } catch {
-          // ignore
-        }
+        try { setItems(JSON.parse(updated)); } catch { /* ignore */ }
       }
     };
     window.addEventListener("cart-updated", handler);
@@ -50,9 +41,7 @@ export default function CartPage() {
   const updateQuantity = (productId: string, delta: number) => {
     setItems((prev) =>
       prev
-        .map((i) =>
-          i.productId === productId ? { ...i, quantity: i.quantity + delta } : i
-        )
+        .map((i) => (i.productId === productId ? { ...i, quantity: i.quantity + delta } : i))
         .filter((i) => i.quantity > 0)
     );
   };
@@ -67,41 +56,26 @@ export default function CartPage() {
       try {
         const payload = JSON.parse(atob(stored.split(".")[1]));
         return payload.userId || payload.email || "guest";
-      } catch {
-        return "guest";
-      }
+      } catch { return "guest"; }
     }
     return "guest";
   };
 
-  const placeOrder = async () => {
-    const body = {
-      customerId: getCustomerId(),
-      items: items.map((i) => ({
-        productId: i.productId,
-        name: i.name,
-        quantity: i.quantity,
-        price: i.price,
-      })),
-    };
-
+  const handlePlaceOrder = async () => {
     try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const res = await fetch(`${API_URL}/api/orders`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
+      await placeOrder.mutateAsync({
+        customerId: getCustomerId(),
+        items: items.map((i) => ({
+          productId: i.productId,
+          name: i.name,
+          quantity: i.quantity,
+          price: i.price,
+        })),
       });
-      if (res.ok) {
-        setItems([]);
-        setOrderResult("Order placed successfully! Check the Orders page.");
-      } else {
-        const err = await res.json();
-        setOrderResult(`Order failed: ${err.message}`);
-      }
-    } catch {
-      setOrderResult("Order failed: Network error");
+      setItems([]);
+      setOrderResult("Order placed successfully! Check the Orders page.");
+    } catch (err: any) {
+      setOrderResult(`Order failed: ${err.message}`);
     }
   };
 
@@ -112,10 +86,7 @@ export default function CartPage() {
       {orderResult && (
         <div className="glass-card rounded-2xl p-4 mb-6 text-sm text-slate-300">
           {orderResult}
-          <button
-            onClick={() => setOrderResult(null)}
-            className="ml-4 text-purple-400 hover:text-purple-300"
-          >
+          <button onClick={() => setOrderResult(null)} className="ml-4 text-purple-400 hover:text-purple-300">
             Dismiss
           </button>
         </div>
@@ -124,10 +95,7 @@ export default function CartPage() {
       {items.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-slate-500 text-lg">Your cart is empty</p>
-          <a
-            href="/products"
-            className="gradient-btn text-white px-8 py-3 rounded-xl font-medium inline-block mt-6"
-          >
+          <a href="/products" className="gradient-btn text-white px-8 py-3 rounded-xl font-medium inline-block mt-6">
             Browse Products
           </a>
         </div>
@@ -142,29 +110,12 @@ export default function CartPage() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => updateQuantity(item.productId, -1)}
-                      className="w-8 h-8 rounded-lg bg-white/10 text-white hover:bg-white/20"
-                    >
-                      -
-                    </button>
+                    <button onClick={() => updateQuantity(item.productId, -1)} className="w-8 h-8 rounded-lg bg-white/10 text-white hover:bg-white/20">-</button>
                     <span className="text-white w-8 text-center">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.productId, 1)}
-                      className="w-8 h-8 rounded-lg bg-white/10 text-white hover:bg-white/20"
-                    >
-                      +
-                    </button>
+                    <button onClick={() => updateQuantity(item.productId, 1)} className="w-8 h-8 rounded-lg bg-white/10 text-white hover:bg-white/20">+</button>
                   </div>
-                  <span className="text-lg font-bold gradient-text w-24 text-right">
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </span>
-                  <button
-                    onClick={() => removeItem(item.productId)}
-                    className="text-red-400 hover:text-red-300 text-sm"
-                  >
-                    Remove
-                  </button>
+                  <span className="text-lg font-bold gradient-text w-24 text-right">${(item.price * item.quantity).toFixed(2)}</span>
+                  <button onClick={() => removeItem(item.productId)} className="text-red-400 hover:text-red-300 text-sm">Remove</button>
                 </div>
               </div>
             ))}
@@ -187,10 +138,7 @@ export default function CartPage() {
                 <span className="gradient-text">${total.toFixed(2)}</span>
               </div>
             </div>
-            <button
-              onClick={placeOrder}
-              className="gradient-btn text-white w-full py-3 rounded-xl font-medium mt-6"
-            >
+            <button onClick={handlePlaceOrder} className="gradient-btn text-white w-full py-3 rounded-xl font-medium mt-6">
               Place Order
             </button>
           </div>

@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, jest, beforeEach } from "bun:test";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-vi.mock("@prisma/client", () => ({
-  PrismaClient: vi.fn(() => ({
+jest.mock("@prisma/client", () => ({
+  PrismaClient: jest.fn(() => ({
     user: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
     },
   })),
 }));
@@ -15,7 +15,7 @@ const JWT_SECRET = "test-secret";
 
 describe("Auth Service Logic", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it("should hash passwords correctly", async () => {

@@ -2,9 +2,6 @@ import express from "express";
 import { WebSocketServer, WebSocket } from "ws";
 import http from "http";
 import amqp from "amqplib";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const app = express();
 const PORT = parseInt(process.env.NOTIFICATION_SERVICE_PORT || "3005");

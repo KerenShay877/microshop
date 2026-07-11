@@ -8,9 +8,12 @@ done
 echo "Database ready!"
 
 echo "Running database push..."
-npx prisma db push --skip-generate
+bunx prisma db push --skip-generate
 echo "Running generate..."
-npx prisma generate
+bunx prisma generate
+
+echo "Running seed..."
+bun run src/seed.ts
 
 echo "Starting service..."
 exec "$@"
