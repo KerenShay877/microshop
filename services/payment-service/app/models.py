@@ -12,5 +12,6 @@ class Payment(Base):
     amount = Column(Float, nullable=False)
     status = Column(String, nullable=False, default="pending", index=True)
     transaction_id = Column(String, nullable=True)
+    idempotency_key = Column(String, nullable=True, unique=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

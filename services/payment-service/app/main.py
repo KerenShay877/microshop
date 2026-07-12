@@ -6,8 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import dotenv
 
-from app.database import init_db
 from app.events import connect, start_consumer
+from app.routes.payments import router as payments_router
 
 dotenv.load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -15,13 +15,13 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
     await connect()
     asyncio.create_task(start_consumer())
     yield
 
 
 app = FastAPI(title="Payment Service", lifespan=lifespan)
+app.include_router(payments_router)
 
 
 @app.get("/health")

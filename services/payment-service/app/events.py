@@ -1,7 +1,7 @@
 import os
 import json
 import uuid
-import asyncio
+import random
 import logging
 from datetime import datetime, timezone
 
@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672")
 EXCHANGE = "microshop.events"
 QUEUE = "payment-service-queue"
+FAILURE_RATE = float(os.getenv("PAYMENT_FAILURE_RATE", "0.0"))
 
 connection: aio_pika.RobustConnection | None = None
 
@@ -74,34 +75,72 @@ async def process_payment(data: dict):
     order_id = data.get("orderId")
     amount = data.get("totalAmount", 0)
 
-    payment = Payment(
-        order_id=order_id,
-        amount=amount,
-        status="completed",
-        transaction_id=str(uuid.uuid4()),
-    )
+    if not order_id or amount <= 0:
+        logger.error(f"Invalid payment data for order {order_id}: amount={amount}")
+        await publish_event("payment.failed", {
+            "orderId": order_id,
+            "reason": "Invalid order data",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        })
+        return
+
+    idempotency_key = f"payment:{order_id}"
 
     async with async_session() as session:
-        session.add(payment)
-        await session.commit()
+        existing = await session.execute(
+            select(Payment).where(Payment.idempotency_key == idempotency_key)
+        )
+        if existing.scalar_one_or_none():
+            logger.info(f"Payment already processed for order {order_id}, skipping")
+            return
 
-    await publish_event("payment.completed", {
-        "orderId": order_id,
-        "transactionId": payment.transaction_id,
-        "amount": amount,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    })
-    logger.info(f"Payment completed for order {order_id}")
+        should_fail = random.random() < FAILURE_RATE
+
+        if should_fail:
+            payment = Payment(
+                order_id=order_id,
+                amount=amount,
+                status="failed",
+                idempotency_key=idempotency_key,
+            )
+            session.add(payment)
+            await session.commit()
+            await publish_event("payment.failed", {
+                "orderId": order_id,
+                "reason": "Payment declined (simulated failure)",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            logger.info(f"Payment failed for order {order_id}")
+        else:
+            payment = Payment(
+                order_id=order_id,
+                amount=amount,
+                status="completed",
+                transaction_id=str(uuid.uuid4()),
+                idempotency_key=idempotency_key,
+            )
+            session.add(payment)
+            await session.commit()
+            await publish_event("payment.completed", {
+                "orderId": order_id,
+                "transactionId": payment.transaction_id,
+                "amount": amount,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            logger.info(f"Payment completed for order {order_id}")
 
 
 async def refund_payment(data: dict):
     order_id = data.get("orderId")
+    if not order_id:
+        return
+
     async with async_session() as session:
         result = await session.execute(
             select(Payment).where(Payment.order_id == order_id)
         )
         payment = result.scalar_one_or_none()
-        if payment:
+        if payment and payment.status != "refunded":
             payment.status = "refunded"
             await session.commit()
             logger.info(f"Payment refunded for order {order_id}")
