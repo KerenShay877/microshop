@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import http from "http";
 import {
   createProxyMiddleware,
   type RequestHandler,
@@ -23,6 +24,8 @@ const PAYMENT_SERVICE_URL =
   process.env.PAYMENT_SERVICE_URL || "http://localhost:3004";
 const AUTH_SERVICE_URL =
   process.env.AUTH_SERVICE_URL || "http://localhost:3006";
+const NOTIFICATION_SERVICE_URL =
+  process.env.NOTIFICATION_SERVICE_URL || "http://notification-service:3005";
 
 app.use(helmet());
 app.use(cors());
@@ -72,6 +75,12 @@ const authProxy = createProxyMiddleware({
   target: AUTH_SERVICE_URL,
   changeOrigin: true,
 });
+
+const notificationWsProxy = createProxyMiddleware({
+  target: NOTIFICATION_SERVICE_URL,
+  changeOrigin: true,
+  ws: true,
+}) as RequestHandler & { upgrade: (req: http.IncomingMessage, socket: any, head: Buffer) => void };
 
 function proxyWithRewrite(proxy: RequestHandler, prefix: string) {
   return (
@@ -143,7 +152,17 @@ app.all("/api/admin/stats", async (_req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+server.on("upgrade", (req, socket, head) => {
+  if (req.url?.startsWith("/ws")) {
+    notificationWsProxy.upgrade(req, socket, head);
+  } else {
+    socket.destroy();
+  }
+});
+
+server.listen(PORT, () => {
   console.log(`API Gateway running on port ${PORT}`);
   console.log(`Proxying /api/products -> ${PRODUCT_SERVICE_URL}/products`);
   console.log(`Proxying /api/orders -> ${ORDER_SERVICE_URL}/orders`);
@@ -151,4 +170,5 @@ app.listen(PORT, () => {
   console.log(`Proxying /api/payments -> ${PAYMENT_SERVICE_URL}`);
   console.log(`Proxying /api/auth -> ${AUTH_SERVICE_URL}/auth`);
   console.log(`Proxying /api/admin -> admin-protected routes`);
+  console.log(`Proxying /ws -> ${NOTIFICATION_SERVICE_URL} (WebSocket)`);
 });

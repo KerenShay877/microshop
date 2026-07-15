@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
-
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3005";
+import { useNotifications } from "@/lib/use-notifications";
 
 const statusColors: Record<string, string> = {
   pending: "text-yellow-400",
@@ -13,48 +12,32 @@ const statusColors: Record<string, string> = {
   cancelled: "text-red-400",
 };
 
+const orderEvents = ["order.created", "order.confirmed", "order.cancelled"];
+
 export default function OrdersPage() {
   const { data: orders, isLoading } = trpc.order.myOrders.useQuery();
-  const [notifications, setNotifications] = useState<string[]>([]);
   const placeOrder = trpc.order.create.useMutation();
   const [localOrders, setLocalOrders] = useState<any[]>([]);
+  const { events: wsEvents } = useNotifications({ maxEvents: 20, filter: orderEvents });
 
   useEffect(() => {
     if (orders) setLocalOrders(orders as any[]);
   }, [orders]);
 
   useEffect(() => {
-    let ws: WebSocket;
-    let reconnectTimer: ReturnType<typeof setTimeout>;
-
-    function connect() {
-      ws = new WebSocket(WS_URL);
-      ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          const eventType = msg.type || "";
-          const eventData = msg.data || {};
-          setNotifications((prev) => [
-            `Event: ${eventType} — ${JSON.stringify(eventData)}`,
-            ...prev.slice(0, 9),
-          ]);
-          if (eventData.orderId && ["order.confirmed", "order.cancelled", "order.created"].includes(eventType)) {
-            setLocalOrders((prev) =>
-              prev.map((o: any) =>
-                o.id === eventData.orderId
-                  ? { ...o, status: eventType.replace("order.", "") }
-                  : o
-              )
-            );
-          }
-        } catch { /* ignore */ }
-      };
-      ws.onclose = () => { reconnectTimer = setTimeout(connect, 3000); };
+    for (const ev of wsEvents) {
+      const orderId = ev.data?.orderId as string | undefined;
+      if (orderId) {
+        setLocalOrders((prev) =>
+          prev.map((o: any) =>
+            o.id === orderId
+              ? { ...o, status: ev.type.replace("order.", "") }
+              : o
+          )
+        );
+      }
     }
-
-    connect();
-    return () => { ws?.close(); clearTimeout(reconnectTimer); };
-  }, []);
+  }, [wsEvents]);
 
   const placeTestOrder = useCallback(async () => {
     try {
@@ -122,10 +105,12 @@ export default function OrdersPage() {
 
         <div className="glass-card rounded-2xl p-6 h-fit">
           <h2 className="text-lg font-semibold text-white mb-4">Live Events</h2>
-          {notifications.length === 0 && <p className="text-sm text-slate-500">Waiting for events...</p>}
+          {wsEvents.length === 0 && <p className="text-sm text-slate-500">Waiting for events...</p>}
           <div className="space-y-2 max-h-[500px] overflow-y-auto">
-            {notifications.map((n, i) => (
-              <div key={i} className="text-xs text-slate-400 font-mono bg-white/5 rounded-lg p-2">{n}</div>
+            {wsEvents.map((ev, i) => (
+              <div key={i} className="text-xs text-slate-400 font-mono bg-white/5 rounded-lg p-2">
+                {ev.type} — {(ev.data?.orderId as string)?.slice(0, 8) || JSON.stringify(ev.data)}
+              </div>
             ))}
           </div>
         </div>

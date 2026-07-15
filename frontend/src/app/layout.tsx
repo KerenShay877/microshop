@@ -3,6 +3,7 @@ import "@/styles/globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { TRPCProvider } from "@/lib/trpc-provider";
 import { Nav } from "@/components/nav";
+import { NotificationToast } from "@/components/notification-toast";
 
 export const metadata: Metadata = {
   title: "MicroShop",
@@ -20,6 +21,7 @@ export default function RootLayout({
         <TRPCProvider>
           <AuthProvider>
             <Nav />
+            <NotificationToast />
             <main className="max-w-7xl mx-auto px-6 pt-24 pb-12">
               {children}
             </main>

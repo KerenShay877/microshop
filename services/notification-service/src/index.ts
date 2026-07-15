@@ -2,6 +2,7 @@ import express from "express";
 import { WebSocketServer, WebSocket } from "ws";
 import http from "http";
 import amqp from "amqplib";
+import { sendEmail } from "./email";
 
 const app = express();
 const PORT = parseInt(process.env.NOTIFICATION_SERVICE_PORT || "3005");
@@ -69,7 +70,9 @@ async function startConsumer() {
     if (!msg) return;
     try {
       const content = JSON.parse(msg.content.toString());
+      const eventType = msg.fields.routingKey;
       broadcast(content);
+      sendEmail(eventType, content);
       channel.ack(msg);
     } catch (err) {
       console.error("Failed to process message:", err);
