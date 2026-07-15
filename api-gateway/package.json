@@ -8,6 +8,11 @@
     "lint": "eslint src/"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.8.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.51.0",
+    "@opentelemetry/resources": "^1.24.0",
+    "@opentelemetry/sdk-trace-base": "^1.24.0",
+    "@opentelemetry/semantic-conventions": "^1.24.0",
     "@trpc/server": "^11.18.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",

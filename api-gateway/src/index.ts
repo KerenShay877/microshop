@@ -1,3 +1,4 @@
+import "./tracing";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -11,6 +12,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { authMiddleware, optionalAuth, requireAdmin } from "./middleware/auth";
 import { appRouter } from "./trpc";
 import { createContext } from "./trpc/context";
+import { tracer } from "./tracing";
 
 const app = express();
 const PORT = process.env.API_GATEWAY_PORT || 3000;
@@ -29,6 +31,17 @@ const NOTIFICATION_SERVICE_URL =
 
 app.use(helmet());
 app.use(cors());
+
+app.use((req, res, next) => {
+  const span = tracer.startSpan(`${req.method} ${req.path}`);
+  res.on("finish", () => {
+    span.setAttribute("http.status_code", res.statusCode);
+    span.setAttribute("http.method", req.method);
+    span.setAttribute("http.url", req.originalUrl);
+    span.end();
+  });
+  next();
+});
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,

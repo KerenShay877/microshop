@@ -10,3 +10,8 @@ pytest==8.0.0
 pytest-asyncio==0.23.3
 httpx==0.26.0
 aiosqlite==0.19.0
+opentelemetry-distro==0.47b0
+opentelemetry-exporter-otlp==1.25.0
+opentelemetry-instrumentation-fastapi==0.47b0
+opentelemetry-instrumentation-sqlalchemy==0.47b0
+opentelemetry-instrumentation-aio-pika==0.47b0

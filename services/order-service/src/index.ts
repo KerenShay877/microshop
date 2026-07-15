@@ -1,8 +1,10 @@
+import "./tracing";
 import Fastify from "fastify";
 import amqp from "amqplib";
 import { orderRoutes } from "./routes/orders";
 import { connectPublisher } from "./events/publisher";
 import { startConsumer } from "./events/consumer";
+import { tracer } from "./tracing";
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://guest:guest@rabbitmq:5672";
 const MAX_RETRIES = 30;
@@ -10,6 +12,20 @@ const RETRY_INTERVAL = 2000;
 
 const app = Fastify({ logger: true });
 const PORT = parseInt(process.env.ORDER_SERVICE_PORT || "3002");
+
+app.addHook("onRequest", (request, reply, done) => {
+  const span = tracer.startSpan(`${request.method} ${request.url}`);
+  reply.then(
+    () => {
+      span.setAttribute("http.status_code", reply.statusCode);
+      span.setAttribute("http.method", request.method);
+      span.setAttribute("http.url", request.url);
+      span.end();
+    },
+    () => span.end(),
+  );
+  done();
+});
 
 app.get("/health", async () => {
   return { status: "ok", service: "order-service", timestamp: new Date().toISOString() };

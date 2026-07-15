@@ -10,9 +10,12 @@ import (
 	"github.com/user/microshop/inventory-service/internal/handler"
 	"github.com/user/microshop/inventory-service/internal/messaging"
 	"github.com/user/microshop/inventory-service/internal/repository"
+	"github.com/user/microshop/inventory-service/pkg/tracing"
 )
 
 func main() {
+	tracing.Init()
+	defer tracing.Shutdown()
 	port := os.Getenv("INVENTORY_SERVICE_PORT")
 	if port == "" {
 		port = "3003"

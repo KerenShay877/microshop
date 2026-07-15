@@ -12,6 +12,11 @@
     "test:watch": "bun test --watch"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.8.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.51.0",
+    "@opentelemetry/resources": "^1.24.0",
+    "@opentelemetry/sdk-trace-base": "^1.24.0",
+    "@opentelemetry/semantic-conventions": "^1.24.0",
     "fastify": "^4.25.1",
     "@prisma/client": "^5.7.0",
     "amqplib": "^0.10.3"

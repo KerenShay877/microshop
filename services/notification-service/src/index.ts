@@ -1,11 +1,24 @@
+import "./tracing";
 import express from "express";
 import { WebSocketServer, WebSocket } from "ws";
 import http from "http";
 import amqp from "amqplib";
+import { tracer } from "./tracing";
 import { sendEmail } from "./email";
 
 const app = express();
 const PORT = parseInt(process.env.NOTIFICATION_SERVICE_PORT || "3005");
+
+app.use((req, res, next) => {
+  const span = tracer.startSpan(`${req.method} ${req.path}`);
+  res.on("finish", () => {
+    span.setAttribute("http.status_code", res.statusCode);
+    span.setAttribute("http.method", req.method);
+    span.setAttribute("http.url", req.originalUrl);
+    span.end();
+  });
+  next();
+});
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://guest:guest@rabbitmq:5672";
 const EXCHANGE = "microshop.events";
 const QUEUE = "notification-service-queue";

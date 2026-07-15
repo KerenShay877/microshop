@@ -10,4 +10,4 @@ COPY wait-for-db.sh /wait-for-db.sh
 RUN chmod +x /wait-for-db.sh
 EXPOSE 3004
 ENTRYPOINT ["/wait-for-db.sh"]
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 3004"]
+CMD ["sh", "-c", "alembic upgrade head && opentelemetry-instrument uvicorn app.main:app --host 0.0.0.0 --port 3004"]

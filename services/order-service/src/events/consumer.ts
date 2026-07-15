@@ -1,7 +1,9 @@
 import amqp from "amqplib";
+import { trace, propagation, context } from "@opentelemetry/api";
 import { PrismaClient } from "@prisma/client";
 import { EventType } from "./events";
 import { publishEvent } from "./publisher";
+import { tracer } from "../tracing";
 
 const EXCHANGE = "microshop.events";
 const QUEUE = "order-service-queue";
@@ -28,14 +30,24 @@ export async function startConsumer(): Promise<void> {
 
   await channel.consume(q.queue, async (msg) => {
     if (!msg) return;
-    try {
-      const { type, data } = JSON.parse(msg.content.toString());
-      await handleEvent(type, data);
-      channel.ack(msg);
-    } catch (err) {
-      console.error("Failed to handle event:", err);
-      channel.nack(msg, false, false);
-    }
+    const parentContext = propagation.extract(
+      trace.getActiveContext() || context.active(),
+      msg.properties.headers || {},
+    );
+    await context.with(parentContext, async () => {
+      const span = tracer.startSpan(`consume ${msg.fields.routingKey}`);
+      await context.with(trace.setSpan(context.active(), span), async () => {
+        try {
+          const { type, data } = JSON.parse(msg.content.toString());
+          await handleEvent(type, data);
+          channel.ack(msg);
+        } catch (err) {
+          console.error("Failed to handle event:", err);
+          channel.nack(msg, false, false);
+        }
+        span.end();
+      });
+    });
   });
 
   console.log("Order service consumer started");
