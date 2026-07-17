@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-service-config
+  namespace: microshop
+data:
+  DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/orders"
+  RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
+  OTEL_SERVICE_NAME: "order-service"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger-collector:4318"
+  OTEL_TRACES_SAMPLER: "parentbased_traceidratio"
+  OTEL_TRACES_SAMPLER_ARG: "1.0"

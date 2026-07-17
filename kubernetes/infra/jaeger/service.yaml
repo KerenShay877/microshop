@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  namespace: microshop
+spec:
+  selector:
+    app: jaeger
+  ports:
+    - name: grpc
+      port: 4317
+      targetPort: 4317
+    - name: http
+      port: 4318
+      targetPort: 4318
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-query
+  namespace: microshop
+spec:
+  selector:
+    app: jaeger
+  ports:
+    - name: ui
+      port: 16686
+      targetPort: 16686
