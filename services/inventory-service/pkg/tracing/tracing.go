@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var shutdown func()
@@ -34,7 +34,7 @@ func Init() {
 	}
 
 	res, err := resource.New(context.Background(),
-		resource.WithAttributes(semconv.ServiceName(serviceName)),
+		resource.WithAttributes(attribute.String("service.name", serviceName)),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create resource: %v", err)

@@ -1,6 +1,7 @@
 FROM golang:1.22-alpine AS builder
 WORKDIR /app
 COPY . .
+RUN apk add --no-cache git
 RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -o /inventory-service ./cmd/main.go
 
