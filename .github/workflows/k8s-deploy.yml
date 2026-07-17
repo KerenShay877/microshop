@@ -1,0 +1,78 @@
+name: K8s Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run lint
+        run: |
+          cd api-gateway && npm install && npm run lint
+          cd ../services/auth-service && npm install && npm run lint
+      - name: Validate K8s manifests
+        run: |
+          kubectl kustomize kubernetes/ > /dev/null
+      - name: Validate Dockerfiles
+        run: |
+          docker compose config > /dev/null
+
+  build-and-deploy:
+    name: Build & Deploy to Minikube
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@latest
+        with:
+          minikube-version: latest
+          driver: docker
+          cpus: 4
+          memory: 8g
+
+      - name: Build images
+        run: |
+          eval $(minikube docker-env)
+          docker build -t microshop/api-gateway:latest -f api-gateway/Dockerfile api-gateway/
+          docker build -t microshop/auth-service:latest -f services/auth-service/Dockerfile.k8s services/auth-service/
+          docker build -t microshop/product-service:latest -f services/product-service/Dockerfile.k8s services/product-service/
+          docker build -t microshop/order-service:latest -f services/order-service/Dockerfile.k8s services/order-service/
+          docker build -t microshop/inventory-service:latest -f services/inventory-service/Dockerfile.k8s services/inventory-service/
+          docker build -t microshop/payment-service:latest -f services/payment-service/Dockerfile.k8s services/payment-service/
+          docker build -t microshop/notification-service:latest -f services/notification-service/Dockerfile services/notification-service/
+          docker build -t microshop/frontend:latest -f frontend/Dockerfile .
+
+      - name: Deploy to minikube
+        run: |
+          minikube addons enable ingress
+          kubectl apply -k kubernetes/
+
+      - name: Wait for pods
+        run: |
+          kubectl wait --for=condition=ready pod -l app=postgres -n microshop --timeout=120s
+          kubectl wait --for=condition=ready pod -l app=rabbitmq -n microshop --timeout=120s
+          kubectl wait --for=condition=ready pod --all -n microshop --timeout=180s
+
+      - name: Run smoke tests
+        run: |
+          INGRESS_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "$INGRESS_IP microshop.local" | sudo tee -a /etc/hosts
+          chmod +x scripts/smoke-test-k8s.sh
+          scripts/smoke-test-k8s.sh http://microshop.local http://jaeger-query:16686
+
+      - name: Debug on failure
+        if: failure()
+        run: |
+          kubectl get pods -n microshop
+          kubectl describe pods -n microshop

@@ -1,0 +1,17 @@
+namespace: microshop
+
+resources:
+  - base/namespace.yaml
+  - base/secrets.yaml
+  - infra/postgres/
+  - infra/rabbitmq/
+  - infra/jaeger/
+  - services/api-gateway/
+  - services/auth-service/
+  - services/product-service/
+  - services/order-service/
+  - services/inventory-service/
+  - services/payment-service/
+  - services/notification-service/
+  - frontend/
+  - ingress/

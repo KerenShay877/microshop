@@ -8,10 +8,10 @@ done
 echo "Database ready!"
 
 echo "Running database push..."
-npx prisma db push --accept-data-loss
+bunx prisma db push --accept-data-loss
 
 echo "Running seed..."
-npx tsx prisma/seed.ts
+bun run prisma/seed.ts
 
 echo "Starting service..."
-exec node dist/index.js
+exec bun run src/index.ts

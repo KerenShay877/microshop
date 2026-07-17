@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 body {
   font-family: system-ui, -apple-system, sans-serif;
   background: #0a0e1a;
@@ -41,6 +46,10 @@ body {
   .gradient-btn {
     background: linear-gradient(135deg, #7c3aed, #06b6d4);
     transition: all 0.3s ease;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
   }
 
   .gradient-btn:hover {

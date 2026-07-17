@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: microshop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+    spec:
+      initContainers:
+        - name: migrate
+          image: microshop/product-service:latest
+          command: ["bunx", "prisma", "migrate", "deploy"]
+          envFrom:
+            - configMapRef:
+                name: product-service-config
+            - secretRef:
+                name: microshop-secrets
+        - name: seed
+          image: microshop/product-service:latest
+          command: ["bunx", "tsx", "prisma/seed.ts"]
+          envFrom:
+            - configMapRef:
+                name: product-service-config
+            - secretRef:
+                name: microshop-secrets
+      containers:
+        - name: product-service
+          image: microshop/product-service:latest
+          ports:
+            - containerPort: 3001
+          envFrom:
+            - configMapRef:
+                name: product-service-config
+            - secretRef:
+                name: microshop-secrets
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

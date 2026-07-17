@@ -1,0 +1,10 @@
+FROM oven/bun:1-alpine
+RUN apk add --no-cache openssl
+WORKDIR /app
+COPY package.json ./
+RUN bun install
+COPY prisma/ ./prisma/
+RUN bunx prisma generate
+COPY src/ ./src/
+EXPOSE 3001
+CMD ["bun", "run", "src/index.ts"]
