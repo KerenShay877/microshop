@@ -102,14 +102,14 @@ Every service exports OpenTelemetry traces to Jaeger. Trace context propagates a
 |---|---|---|---|---|
 | **API Gateway** | Bun / Express | 3000 | — | Proxy routing, JWT auth middleware, rate limiting |
 | **Auth** | Bun / Fastify | 3006 | PostgreSQL | Register, login, JWT issuance, role management |
-| **Product** | Bun / Fastify | 3001 | PostgreSQL | CRUD, search, categories (30 seeded products) |
+| **Product** | Bun / Fastify | 3001 | PostgreSQL | CRUD, search, categories (30 seeded products), Redis cache |
 | **Order** | Bun / Fastify | 3002 | PostgreSQL | Order CRUD, Saga state machine, event pub/sub |
 | **Inventory** | Go / Chi | 3003 | PostgreSQL | Stock levels, reservations, RabbitMQ consumer |
 | **Payment** | Python / FastAPI | 3004 | PostgreSQL | Mock payment processing, idempotency, refunds |
 | **Notification** | Bun / Express | 3005 | — | WebSocket broadcast, email (nodemailer) |
 | **Frontend** | Next.js 14 | 4000 | — | Product listing, cart, orders, auth, admin panel |
 
-## Testing
+## Testing & Load Testing
 
 ```bash
 # Unit tests (25 total)
@@ -119,13 +119,20 @@ cd services/order-service && bun test
 
 # Integration tests (20 total — tests all endpoints end-to-end)
 node tests/system.mjs
+
+# Load test (k6)
+k6 run tests/load-test.js
+# against Kubernetes:
+k6 run -e BASE_URL=http://localhost:31000 tests/load-test.js
 ```
 
 **Coverage**: 45 tests — auth (6), product (10), order (9), email formatting (7), cart (8), integration (20).
+**Load test**: 50 concurrent users, p95 latency <200ms, <5% error rate.
 
 ## Key Design Decisions
 
 - **Bun over Node**: All 5 Node.js services migrated from Node to Bun. 4x faster startup, built-in test runner (zero config), native TypeScript execution (no `tsc` build step), auto `.env` loading.
+- **Redis caching**: Product catalog cached with 60s TTL via ioredis. Cache invalidation on writes. Reduces DB load on read-heavy catalog endpoints.
 - **Per-service databases**: Each service owns its data. No shared DB. Enforces service boundaries.
 - **Choreographed Saga (not orchestrated)**: Services react to events independently. No central orchestrator to fail. Simpler than orchestrated (no extra service), harder to trace (which is why OTEL is critical).
 - **Kustomize over Helm**: Simpler for a monorepo. No templating complexity. One `kubectl apply` deploys everything.
@@ -144,7 +151,7 @@ microshop/
 │   └── notification-service/ # Express + WebSocket + email
 ├── frontend/                 # Next.js 14 App Router + tRPC
 ├── kubernetes/               # Kustomize manifests (Phase 10)
-├── tests/                    # System integration tests
+├── tests/                    # System integration tests + k6 load test
 ├── shared/                   # Shared types + event definitions
 ├── scripts/                  # Deployment + smoke test scripts
 ├── docker-compose.yml        # App services

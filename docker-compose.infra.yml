@@ -73,6 +73,13 @@ services:
     volumes:
       - jaeger-data:/tmp/jaeger
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
 volumes:
   product-db-data:
   order-db-data:
@@ -81,3 +88,4 @@ volumes:
   auth-db-data:
   rabbitmq-data:
   jaeger-data:
+  redis-data:

@@ -1,0 +1,141 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test-bun-services:
+    name: Test (Bun Services)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install & Test — Auth Service
+        working-directory: services/auth-service
+        run: |
+          bun install
+          bun test
+
+      - name: Install & Test — Product Service
+        working-directory: services/product-service
+        run: |
+          bun install
+          bun test
+
+      - name: Install & Test — Order Service
+        working-directory: services/order-service
+        run: |
+          bun install
+          bun test
+
+  test-frontend:
+    name: Test (Frontend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install & Test
+        working-directory: frontend
+        run: |
+          bun install
+          bun run test
+
+  test-payment:
+    name: Test (Payment Service)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install & Test
+        working-directory: services/payment-service
+        run: |
+          pip install -r requirements.txt
+          pytest
+
+  typecheck:
+    name: Typecheck (TypeScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Typecheck — API Gateway
+        working-directory: api-gateway
+        run: |
+          bun install
+          bunx tsc --noEmit
+
+      - name: Typecheck — Auth Service
+        working-directory: services/auth-service
+        run: |
+          bun install
+          bunx prisma generate
+          bunx tsc --noEmit
+
+      - name: Typecheck — Product Service
+        working-directory: services/product-service
+        run: |
+          bun install
+          bunx prisma generate
+          bunx tsc --noEmit
+
+      - name: Typecheck — Order Service
+        working-directory: services/order-service
+        run: |
+          bun install
+          bunx prisma generate
+          bunx tsc --noEmit
+
+      - name: Typecheck — Notification Service
+        working-directory: services/notification-service
+        run: |
+          bun install
+          bunx tsc --noEmit
+
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build — API Gateway
+        run: docker build -t microshop/api-gateway:ci -f api-gateway/Dockerfile api-gateway/
+
+      - name: Build — Auth Service
+        run: docker build -t microshop/auth-service:ci -f services/auth-service/Dockerfile services/auth-service/
+
+      - name: Build — Product Service
+        run: docker build -t microshop/product-service:ci -f services/product-service/Dockerfile services/product-service/
+
+      - name: Build — Order Service
+        run: docker build -t microshop/order-service:ci -f services/order-service/Dockerfile services/order-service/
+
+      - name: Build — Inventory Service
+        run: docker build -t microshop/inventory-service:ci -f services/inventory-service/Dockerfile services/inventory-service/
+
+      - name: Build — Payment Service
+        run: docker build -t microshop/payment-service:ci -f services/payment-service/Dockerfile services/payment-service/
+
+      - name: Build — Notification Service
+        run: docker build -t microshop/notification-service:ci -f services/notification-service/Dockerfile services/notification-service/
+
+      - name: Build — Frontend
+        run: docker build -t microshop/frontend:ci -f frontend/Dockerfile .

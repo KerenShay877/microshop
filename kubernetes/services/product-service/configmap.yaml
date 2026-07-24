@@ -9,3 +9,4 @@ data:
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger-collector:4318"
   OTEL_TRACES_SAMPLER: "parentbased_traceidratio"
   OTEL_TRACES_SAMPLER_ARG: "1.0"
+  REDIS_URL: "redis://redis:6379"

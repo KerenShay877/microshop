@@ -1,11 +1,26 @@
 import { FastifyInstance } from "fastify";
 import { PrismaClient } from "@prisma/client";
+import Redis from "ioredis";
 
 const prisma = new PrismaClient();
+const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+
+const CACHE_TTL = 60;
+
+async function invalidateProductCache() {
+  const keys = await redis.keys("products:*");
+  if (keys.length) await redis.del(...keys);
+  await redis.del("categories");
+}
 
 export async function productRoutes(app: FastifyInstance) {
   app.get("/products", async (req) => {
     const { search, category } = req.query as { search?: string; category?: string };
+    const cacheKey = `products:${search || ""}:${category || ""}`;
+
+    const cached = await redis.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+
     const where: any = {};
     if (search) {
       where.OR = [
@@ -16,15 +31,23 @@ export async function productRoutes(app: FastifyInstance) {
     if (category) {
       where.category = { name: { equals: category, mode: "insensitive" } };
     }
-    return prisma.product.findMany({
+
+    const products = await prisma.product.findMany({
       where,
       include: { category: true },
       orderBy: { createdAt: "desc" },
     });
+
+    await redis.set(cacheKey, JSON.stringify(products), "EX", CACHE_TTL);
+    return products;
   });
 
   app.get("/products/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
+
+    const cached = await redis.get(`product:${id}`);
+    if (cached) return JSON.parse(cached);
+
     const product = await prisma.product.findUnique({
       where: { id },
       include: { category: true },
@@ -33,6 +56,8 @@ export async function productRoutes(app: FastifyInstance) {
       reply.status(404).send({ message: "Product not found" });
       return;
     }
+
+    await redis.set(`product:${id}`, JSON.stringify(product), "EX", CACHE_TTL);
     return product;
   });
 
@@ -61,6 +86,7 @@ export async function productRoutes(app: FastifyInstance) {
       include: { category: true },
     });
 
+    await invalidateProductCache();
     reply.status(201).send(product);
   });
 
@@ -99,6 +125,7 @@ export async function productRoutes(app: FastifyInstance) {
       include: { category: true },
     });
 
+    await invalidateProductCache();
     return product;
   });
 
@@ -110,12 +137,19 @@ export async function productRoutes(app: FastifyInstance) {
       return;
     }
     await prisma.product.delete({ where: { id } });
+    await invalidateProductCache();
     reply.status(204).send();
   });
 
   app.get("/categories", async () => {
-    return prisma.category.findMany({
+    const cached = await redis.get("categories");
+    if (cached) return JSON.parse(cached);
+
+    const categories = await prisma.category.findMany({
       include: { _count: { select: { products: true } } },
     });
+
+    await redis.set("categories", JSON.stringify(categories), "EX", CACHE_TTL);
+    return categories;
   });
 }
