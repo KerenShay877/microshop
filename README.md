@@ -13,40 +13,17 @@
 
 A decomposed e-commerce platform built across **4 programming languages**, communicating via **RabbitMQ** with **distributed tracing** across every service. Demonstrates Saga pattern, polyglot microservices, OpenTelemetry instrumentation, and Docker Compose → Kubernetes migration.
 
-```
-┌──────────────┐     ┌─────────────────────────────────────┐
-│  Next.js App  │     │         RabbitMQ (Event Bus)         │
-│  (tRPC client)│     │  ┌──────────┐  ┌──────────────────┐ │
-└──────┬───────┘     │  │order.*   │  │inventory.*       │ │
-       │ HTTP        │  │payment.* │  │stock.reserved    │ │
-┌──────▼───────┐     │  └────┬─────┘  └───────┬──────────┘ │
-│  Express GW   │     └──────┼─────────────────┼────────────┘
-│  (JWT auth)   │            │                 │
-└──┬──┬──┬──┬──┘     ┌──────▼─────────────┐    │
-   │  │  │  │         │ Notification Svc   │◄───┘
-┌──┘  │  │  └──┐      │ (WebSocket + Email)│
-│     │  │     │      └────────────────────┘
-│  ┌──▼──▼──┐  │
-│  │  Order   │  │
-│  │  Service │  │
-│  └──┬──────┘  │
-│  ┌──▼──────┐  │
-│  │ Payment  │  │
-│  │ Service  │  │
-│  └──┬──────┘  │
-│  ┌──▼──────┐  │
-│  │Inventory│──┘
-│  │ (Go)    │
-│  └─────────┘
-│  ┌─────────┐
-│  │ Product  │
-│  │ Service  │
-│  └─────────┘
-│  ┌─────────┐
-│  │  Auth    │
-│  │ Service  │
-│  └─────────┘
-```
+<p align="center">
+  <img src="assets/architecture.svg" alt="MicroShop Architecture" width="100%"/>
+</p>
+
+### Frontend
+
+<p align="center">
+  <img src="assets/frontend-ui.svg" alt="MicroShop Frontend" width="100%"/>
+</p>
+
+Product listing with category filter, search, real-time toast notifications via WebSocket, and live connection indicator.
 
 ## What It Demonstrates
 
@@ -149,16 +126,6 @@ node tests/system.mjs
 ```
 
 **Coverage**: 45 tests — auth (6), product (10), order (9), email formatting (7), cart (8), integration (20).
-
-## Screenshots
-
-<!-- TODO: Add screenshots:
-  - Homepage / product listing
-  - Product detail with Add to Cart
-  - Jaeger trace view showing a full order flow across 5 services
-  - Admin dashboard with stats
-  - Grafana dashboard (when added)
--->
 
 ## Key Design Decisions
 
