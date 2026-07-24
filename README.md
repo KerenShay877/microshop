@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.svg" alt="MicroShop Logo" width="200"/>
+</p>
+
 # microshop — Event-Driven Microservices E-Commerce Platform
 
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)](https://docs.docker.com/compose/)
@@ -16,14 +20,6 @@ A decomposed e-commerce platform built across **4 programming languages**, commu
 <p align="center">
   <img src="assets/architecture.svg" alt="MicroShop Architecture" width="100%"/>
 </p>
-
-### Frontend
-
-<p align="center">
-  <img src="assets/frontend-ui.svg" alt="MicroShop Frontend" width="100%"/>
-</p>
-
-Product listing with category filter, search, real-time toast notifications via WebSocket, and live connection indicator.
 
 ## What It Demonstrates
 
