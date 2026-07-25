@@ -1,11 +1,11 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY frontend/package.json ./package.json
-COPY frontend/package-lock.json ./package-lock.json
-RUN npm install
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
 COPY frontend/ ./frontend/
+COPY api-gateway/package.json ./api-gateway/
 COPY api-gateway/src/ ./api-gateway/src/
-RUN ln -s /app/node_modules /app/api-gateway/node_modules
+RUN cd api-gateway && npm install
 WORKDIR /app/frontend
 RUN npm run build
 
